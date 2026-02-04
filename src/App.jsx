@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
+import { Check, Copy } from 'lucide-react';
 
 const GlobalStyle = createGlobalStyle`
   *, *::before, *::after {
@@ -45,10 +46,12 @@ const App = () => {
   const [toast, setToast] = useState('');
   const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
   const [isClearPending, setIsClearPending] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
   const bottomRef = useRef(null);
   const hasLoadedHistory = useRef(false);
   const importInputRef = useRef(null);
   const clearTimeoutRef = useRef(null);
+  const copyTimeoutRef = useRef(null);
 
   const HISTORY_STORAGE_KEY = 'mygpt-history';
 
@@ -270,13 +273,13 @@ const App = () => {
     setToast('Conversation cleared.');
   };
 
-  const handleCopyMessage = async (text) => {
+  const handleCopyMessage = async (message) => {
     try {
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(message.content);
       } else {
         const textarea = document.createElement('textarea');
-        textarea.value = text;
+        textarea.value = message.content;
         textarea.setAttribute('readonly', '');
         textarea.style.position = 'absolute';
         textarea.style.left = '-9999px';
@@ -285,9 +288,15 @@ const App = () => {
         document.execCommand('copy');
         document.body.removeChild(textarea);
       }
-      setToast('Message copied.');
+      setCopiedMessageId(message.id);
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopiedMessageId(null);
+      }, 2500);
     } catch (error) {
-      setToast('Unable to copy message.');
+      console.warn('Unable to copy message.', error);
     }
   };
 
@@ -463,10 +472,10 @@ const App = () => {
             <MessageActions $role={message.role}>
               <CopyButton
                 type="button"
-                onClick={() => handleCopyMessage(message.content)}
+                onClick={() => handleCopyMessage(message)}
                 aria-label="Copy message"
               >
-                📋
+                {copiedMessageId === message.id ? <Check size={16} /> : <Copy size={16} />}
               </CopyButton>
             </MessageActions>
           </MessageRow>
