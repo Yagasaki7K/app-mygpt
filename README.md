@@ -1,3 +1,12 @@
+<p align="center">
+  <img
+    src="https://github.com/user-attachments/assets/8d12d8ca-40fa-4383-8682-0ffe5a0a847f"
+    alt="image"
+    width="1899"
+    height="926"
+  />
+</p>
+
 # MyGPT (secure local multi-LLM)
 
 MyGPT is a local interface to chat with multiple large language models (LLMs) in one place, keeping your keys and history under your control. It works with any provider compatible with the OpenAI-style API (`chat/completions`) and lets you switch models quickly without exposing tokens in the front-end.
