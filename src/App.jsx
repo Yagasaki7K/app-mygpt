@@ -10,6 +10,7 @@ const GlobalStyle = createGlobalStyle`
     margin: 0;
     font-family: 'Poppins', 'SF Pro Text', 'Inter', system-ui, -apple-system, sans-serif;
     background: radial-gradient(circle at top, rgba(80, 60, 130, 0.85), rgba(8, 6, 16, 1));
+    background-attachment: fixed;
     color: #f5f7ff;
     min-height: 100vh;
   }
@@ -21,6 +22,7 @@ const GlobalStyle = createGlobalStyle`
   @media (prefers-color-scheme: light) {
     body {
       background: radial-gradient(circle at top, rgba(232, 226, 255, 0.9), rgba(240, 236, 250, 1));
+      background-attachment: fixed;
       color: #0c0f1a;
     }
   }
@@ -346,7 +348,7 @@ const App = () => {
             onClick={handleClearConversation}
             disabled={messages.length === 0}
           >
-            Limpar conversa
+            Clear conversation
           </DestructiveButton>
         </HeaderControls>
       </Header>
@@ -686,7 +688,7 @@ const MessageBubble = styled.div`
   background: ${(props) =>
     props.$role === 'user'
       ? 'linear-gradient(135deg, rgba(113, 89, 193, 0.95), rgba(95, 70, 168, 0.9))'
-      : 'rgba(17, 20, 32, 0.85)'};
+      : 'rgba(34, 24, 56, 0.6)'};
   box-shadow: 0 16px 30px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
@@ -695,7 +697,7 @@ const MessageBubble = styled.div`
     background: ${(props) =>
       props.$role === 'user'
         ? 'linear-gradient(135deg, rgba(113, 89, 193, 0.9), rgba(160, 140, 235, 0.9))'
-        : 'rgba(255, 255, 255, 0.9)'};
+        : 'rgba(255, 255, 255, 0.7)'};
     box-shadow: 0 16px 30px rgba(120, 130, 160, 0.18);
   }
 `;
@@ -800,22 +802,13 @@ const ComposerInner = styled.div`
   gap: 12px;
   padding: 16px;
   border-radius: 24px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.18),
-    rgba(120, 160, 255, 0.08),
-    rgba(255, 255, 255, 0.12)
-  );
+  background: rgba(34, 24, 56, 0.6);
   box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(26px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.25);
 
   @media (prefers-color-scheme: light) {
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.85),
-      rgba(200, 220, 255, 0.45)
-    );
+    background: rgba(255, 255, 255, 0.7);
     box-shadow: 0 16px 30px rgba(120, 130, 160, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 `;
@@ -922,6 +915,7 @@ const ModalCard = styled.section`
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(18px);
+  font-family: 'Poppins', 'SF Pro Text', 'Inter', system-ui, -apple-system, sans-serif;
 `;
 
 const ModalHeader = styled.div`
