@@ -247,6 +247,20 @@ const App = () => {
     importInputRef.current?.click();
   };
 
+  const handleClearConversation = () => {
+    const confirmed = window.confirm(
+      'Esta conversa será deletada permanentemente do seu histórico local. Deseja continuar?'
+    );
+    if (!confirmed) {
+      return;
+    }
+    localStorage.removeItem(HISTORY_STORAGE_KEY);
+    setMessages([]);
+    setInput('');
+    setIsTyping(false);
+    setToast('Conversa limpa com sucesso.');
+  };
+
   const renderInlineMarkdown = (text) => {
     const parts = text.split(/(\*\*[^*]+\*\*|_[^_]+_|`[^`]+`)/g);
     return parts.map((part, index) => {
@@ -320,6 +334,13 @@ const App = () => {
           <SecondaryButton type="button" onClick={() => setIsProviderModalOpen(true)}>
             Add provider
           </SecondaryButton>
+          <DestructiveButton
+            type="button"
+            onClick={handleClearConversation}
+            disabled={messages.length === 0}
+          >
+            Limpar conversa
+          </DestructiveButton>
         </HeaderControls>
       </Header>
 
@@ -583,6 +604,21 @@ const SecondaryButton = styled.button`
   @media (prefers-color-scheme: light) {
     background: rgba(255, 255, 255, 0.8);
     border-color: rgba(20, 30, 60, 0.2);
+  }
+`;
+
+const DestructiveButton = styled(SecondaryButton)`
+  border-color: rgba(255, 122, 122, 0.45);
+  color: rgba(255, 214, 214, 0.95);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 12px 22px rgba(255, 90, 90, 0.25);
+    border-color: rgba(255, 122, 122, 0.8);
+  }
+
+  @media (prefers-color-scheme: light) {
+    color: rgba(140, 0, 0, 0.9);
+    border-color: rgba(180, 40, 40, 0.4);
   }
 `;
 
