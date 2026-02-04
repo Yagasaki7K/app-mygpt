@@ -270,6 +270,27 @@ const App = () => {
     setToast('Conversation cleared.');
   };
 
+  const handleCopyMessage = async (text) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setToast('Message copied.');
+    } catch (error) {
+      setToast('Unable to copy message.');
+    }
+  };
+
   const renderInlineMarkdown = (text) => {
     const parts = text.split(/(\*\*[^*]+\*\*|_[^_]+_|`[^`]+`)/g);
     return parts.map((part, index) => {
@@ -439,6 +460,15 @@ const App = () => {
               </MessageMeta>
               <MessageContent>{renderMessageContent(message.content)}</MessageContent>
             </MessageBubble>
+            <MessageActions $role={message.role}>
+              <CopyButton
+                type="button"
+                onClick={() => handleCopyMessage(message.content)}
+                aria-label="Copy message"
+              >
+                📋
+              </CopyButton>
+            </MessageActions>
           </MessageRow>
         ))}
         {isTyping && (
@@ -678,7 +708,9 @@ const ChatArea = styled.main`
 
 const MessageRow = styled.div`
   display: flex;
-  justify-content: ${(props) => (props.$role === 'user' ? 'flex-end' : 'flex-start')};
+  flex-direction: column;
+  align-items: ${(props) => (props.$role === 'user' ? 'flex-end' : 'flex-start')};
+  gap: 6px;
 `;
 
 const MessageBubble = styled.div`
@@ -722,6 +754,35 @@ const MessageContent = styled.div`
     background: rgba(113, 89, 193, 0.25);
     padding: 0 4px;
     border-radius: 6px;
+  }
+`;
+
+const MessageActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+`;
+
+const CopyButton = styled.button`
+  border: none;
+  background: rgba(20, 18, 36, 0.6);
+  color: inherit;
+  border-radius: 12px;
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  @media (prefers-color-scheme: light) {
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 6px 12px rgba(120, 130, 160, 0.2);
   }
 `;
 
