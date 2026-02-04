@@ -9,7 +9,7 @@ const GlobalStyle = createGlobalStyle`
   body {
     margin: 0;
     font-family: 'SF Pro Text', 'Inter', system-ui, -apple-system, sans-serif;
-    background: radial-gradient(circle at top, rgba(50, 54, 73, 0.85), rgba(8, 10, 18, 1));
+    background: radial-gradient(circle at top, rgba(80, 60, 130, 0.85), rgba(8, 6, 16, 1));
     color: #f5f7ff;
     min-height: 100vh;
   }
@@ -20,7 +20,7 @@ const GlobalStyle = createGlobalStyle`
 
   @media (prefers-color-scheme: light) {
     body {
-      background: radial-gradient(circle at top, rgba(220, 230, 255, 0.9), rgba(235, 238, 248, 1));
+      background: radial-gradient(circle at top, rgba(232, 226, 255, 0.9), rgba(240, 236, 250, 1));
       color: #0c0f1a;
     }
   }
@@ -40,8 +40,13 @@ const App = () => {
     token: ''
   });
   const [providerStatus, setProviderStatus] = useState('');
+  const [toast, setToast] = useState('');
+  const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
   const bottomRef = useRef(null);
   const hasLoadedHistory = useRef(false);
+  const importInputRef = useRef(null);
+
+  const HISTORY_STORAGE_KEY = 'mygpt-history';
 
   const canSend = useMemo(() => input.trim().length > 0 && activeProvider, [input, activeProvider]);
 
@@ -57,11 +62,22 @@ const App = () => {
   };
 
   useEffect(() => {
-    const loadHistory = async () => {
-      const response = await fetch(`${API_BASE}/history`);
-      const data = await response.json();
-      setMessages(data);
-      hasLoadedHistory.current = true;
+    const loadHistory = () => {
+      const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
+      if (!stored) {
+        hasLoadedHistory.current = true;
+        return;
+      }
+      try {
+        const data = JSON.parse(stored);
+        if (Array.isArray(data)) {
+          setMessages(data);
+        }
+      } catch (error) {
+        console.warn('Histórico inválido no armazenamento local.', error);
+      } finally {
+        hasLoadedHistory.current = true;
+      }
     };
 
     loadProviders();
@@ -75,14 +91,8 @@ const App = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const persistHistory = async (nextHistory) => {
-    await fetch(`${API_BASE}/history`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(nextHistory)
-    });
+  const persistHistory = (nextHistory) => {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
   };
 
   const handleSend = async () => {
@@ -103,7 +113,7 @@ const App = () => {
     setMessages(nextHistory);
     setInput('');
     setIsTyping(true);
-    await persistHistory(nextHistory);
+    persistHistory(nextHistory);
 
     try {
       const response = await fetch(`${API_BASE}/chat`, {
@@ -120,7 +130,7 @@ const App = () => {
       };
       const updatedHistory = [...nextHistory, assistantMessage];
       setMessages(updatedHistory);
-      await persistHistory(updatedHistory);
+      persistHistory(updatedHistory);
     } finally {
       setIsTyping(false);
     }
@@ -157,12 +167,112 @@ const App = () => {
     const data = await response.json();
     if (data.status === 'ok') {
       setProviderForm({ url: '', model: '', token: '' });
-      setProviderStatus(`Modelo ${data.provider.model} salvo.`);
+      setProviderStatus('');
+      setToast(`Modelo ${data.provider.model} salvo.`);
       await loadProviders();
       setActiveProvider(data.provider.model);
+      setIsProviderModalOpen(false);
       return;
     }
     setProviderStatus(data.message || 'Não foi possível salvar o provedor.');
+  };
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+    const timeout = setTimeout(() => setToast(''), 3500);
+    return () => clearTimeout(timeout);
+  }, [toast]);
+
+  const handleExportHistory = () => {
+    const payload = messages.map(({ role, content }) => ({ role, content }));
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'mygpt-history.json';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const normalizeImportedHistory = (data) => {
+    if (!Array.isArray(data)) {
+      throw new Error('Formato inválido.');
+    }
+    return data.map((entry, index) => {
+      if (typeof entry === 'string') {
+        return {
+          id: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          role: 'user',
+          content: entry,
+          provider: activeProvider || 'importado'
+        };
+      }
+      const content = entry?.content ?? '';
+      return {
+        id: entry?.id || crypto.randomUUID(),
+        timestamp: entry?.timestamp || new Date(Date.now() + index).toISOString(),
+        role: entry?.role || 'user',
+        content,
+        provider: entry?.provider || activeProvider || 'importado'
+      };
+    });
+  };
+
+  const handleImportHistory = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        const normalized = normalizeImportedHistory(data);
+        setMessages(normalized);
+        persistHistory(normalized);
+        setToast('Histórico importado com sucesso.');
+      } catch (error) {
+        setToast('Não foi possível importar o histórico.');
+      } finally {
+        event.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleTriggerImport = () => {
+    importInputRef.current?.click();
+  };
+
+  const renderInlineMarkdown = (text) => {
+    const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <StrongText key={index}>{part.slice(2, -2)}</StrongText>;
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return <InlineCode key={index}>{part.slice(1, -1)}</InlineCode>;
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
+  const renderMessageContent = (text) => {
+    const segments = text.split(/(```[\s\S]*?```)/g);
+    return segments.map((segment, index) => {
+      if (segment.startsWith('```') && segment.endsWith('```')) {
+        const code = segment.replace(/^```/, '').replace(/```$/, '').replace(/^\n/, '');
+        return (
+          <CodeBlock key={index}>
+            <code>{code}</code>
+          </CodeBlock>
+        );
+      }
+      return <span key={index}>{renderInlineMarkdown(segment)}</span>;
+    });
   };
 
   return (
@@ -173,68 +283,103 @@ const App = () => {
           <Title>MyGPT</Title>
           <Subtitle>Histórico contínuo com múltiplas IAs</Subtitle>
         </TitleArea>
-        <ProviderSelect
-          value={activeProvider}
-          onChange={(event) => setActiveProvider(event.target.value)}
-          disabled={providers.length === 0}
-        >
-          {providers.length === 0 ? (
-            <option>Sem provedores válidos</option>
-          ) : (
-            providers.map((provider) => (
-              <option key={provider.model} value={provider.model}>
-                {provider.model}
-              </option>
-            ))
-          )}
-        </ProviderSelect>
+        <HeaderControls>
+          <ProviderSelect
+            value={activeProvider}
+            onChange={(event) => setActiveProvider(event.target.value)}
+            disabled={providers.length === 0}
+          >
+            {providers.length === 0 ? (
+              <option>Sem provedores válidos</option>
+            ) : (
+              providers.map((provider) => (
+                <option key={provider.model} value={provider.model}>
+                  {provider.model}
+                </option>
+              ))
+            )}
+          </ProviderSelect>
+          <SecondaryButton type="button" onClick={() => setIsProviderModalOpen(true)}>
+            Adicionar provedor
+          </SecondaryButton>
+        </HeaderControls>
       </Header>
 
-      <ProviderCard>
-        <ProviderTitle>Adicionar provedor</ProviderTitle>
-        <ProviderForm onSubmit={handleSaveProvider}>
-          <FieldGroup>
-            <FieldLabel htmlFor="provider-url">URL da API</FieldLabel>
-            <FieldInput
-              id="provider-url"
-              name="url"
-              type="url"
-              placeholder="https://integrate.api.nvidia.com/v1/chat/completions"
-              value={providerForm.url}
-              onChange={handleProviderChange}
-              required
-            />
-          </FieldGroup>
-          <FieldGroup>
-            <FieldLabel htmlFor="provider-model">Modelo</FieldLabel>
-            <FieldInput
-              id="provider-model"
-              name="model"
-              type="text"
-              placeholder="moonshotai/kimi-k2.5"
-              value={providerForm.model}
-              onChange={handleProviderChange}
-              required
-            />
-          </FieldGroup>
-          <FieldGroup>
-            <FieldLabel htmlFor="provider-token">Token</FieldLabel>
-            <FieldInput
-              id="provider-token"
-              name="token"
-              type="password"
-              placeholder="sk-..."
-              value={providerForm.token}
-              onChange={handleProviderChange}
-              required
-            />
-          </FieldGroup>
-          <ProviderActions>
-            <PrimaryButton type="submit">Salvar provedor</PrimaryButton>
-            {providerStatus && <StatusText>{providerStatus}</StatusText>}
-          </ProviderActions>
-        </ProviderForm>
-      </ProviderCard>
+      <HistoryPanel>
+        <HistoryInfo>
+          <span>Histórico salvo localmente.</span>
+          <small>Importe ou exporte em JSON quando quiser.</small>
+        </HistoryInfo>
+        <HistoryActions>
+          <SecondaryButton type="button" onClick={handleTriggerImport}>
+            Importar JSON
+          </SecondaryButton>
+          <SecondaryButton type="button" onClick={handleExportHistory} disabled={messages.length === 0}>
+            Exportar JSON
+          </SecondaryButton>
+          <HiddenInput
+            ref={importInputRef}
+            type="file"
+            accept="application/json"
+            onChange={handleImportHistory}
+          />
+        </HistoryActions>
+      </HistoryPanel>
+
+      {isProviderModalOpen && (
+        <ModalOverlay>
+          <ModalCard>
+            <ModalHeader>
+              <ProviderTitle>Adicionar provedor</ProviderTitle>
+              <IconButton type="button" onClick={() => setIsProviderModalOpen(false)}>
+                ✕
+              </IconButton>
+            </ModalHeader>
+            <ProviderForm onSubmit={handleSaveProvider}>
+              <FieldGroup>
+                <FieldLabel htmlFor="provider-url">URL da API</FieldLabel>
+                <FieldInput
+                  id="provider-url"
+                  name="url"
+                  type="url"
+                  placeholder="https://integrate.api.nvidia.com/v1/chat/completions"
+                  value={providerForm.url}
+                  onChange={handleProviderChange}
+                  required
+                />
+              </FieldGroup>
+              <FieldGroup>
+                <FieldLabel htmlFor="provider-model">Modelo</FieldLabel>
+                <FieldInput
+                  id="provider-model"
+                  name="model"
+                  type="text"
+                  placeholder="moonshotai/kimi-k2.5"
+                  value={providerForm.model}
+                  onChange={handleProviderChange}
+                  required
+                />
+              </FieldGroup>
+              <FieldGroup>
+                <FieldLabel htmlFor="provider-token">Token</FieldLabel>
+                <FieldInput
+                  id="provider-token"
+                  name="token"
+                  type="password"
+                  placeholder="sk-..."
+                  value={providerForm.token}
+                  onChange={handleProviderChange}
+                  required
+                />
+              </FieldGroup>
+              <ProviderActions>
+                <PrimaryButton type="submit">Salvar provedor</PrimaryButton>
+                {providerStatus && <StatusText>{providerStatus}</StatusText>}
+              </ProviderActions>
+            </ProviderForm>
+          </ModalCard>
+        </ModalOverlay>
+      )}
 
       <ChatArea>
         {messages.map((message) => (
@@ -244,7 +389,7 @@ const App = () => {
                 <span>{message.role === 'user' ? 'Você' : message.provider}</span>
                 <span>{new Date(message.timestamp).toLocaleTimeString('pt-BR')}</span>
               </MessageMeta>
-              <MessageContent>{message.content}</MessageContent>
+              <MessageContent>{renderMessageContent(message.content)}</MessageContent>
             </MessageBubble>
           </MessageRow>
         ))}
@@ -277,6 +422,7 @@ const App = () => {
           </SendButton>
         </ComposerInner>
       </Composer>
+      {toast && <Toast>{toast}</Toast>}
     </Shell>
   );
 };
@@ -295,7 +441,7 @@ const Header = styled.header`
   gap: 24px;
   padding: 20px 24px;
   border-radius: 24px;
-  background: rgba(20, 24, 40, 0.6);
+  background: rgba(34, 24, 56, 0.6);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -317,19 +463,12 @@ const TitleArea = styled.div`
   gap: 6px;
 `;
 
-const ProviderCard = styled.section`
-  margin-top: 24px;
-  padding: 20px 24px;
-  border-radius: 20px;
-  background: rgba(16, 20, 34, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(18px);
-
-  @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 14px 28px rgba(120, 130, 160, 0.18);
-  }
+const HeaderControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 `;
 
 const ProviderTitle = styled.h2`
@@ -363,7 +502,7 @@ const FieldInput = styled.input`
   font-size: 14px;
 
   &:focus {
-    outline: 2px solid rgba(82, 120, 255, 0.7);
+    outline: 2px solid rgba(113, 89, 193, 0.7);
     outline-offset: 2px;
   }
 
@@ -384,16 +523,43 @@ const PrimaryButton = styled.button`
   border: none;
   padding: 12px 20px;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(82, 120, 255, 1), rgba(116, 155, 255, 1));
+  background: linear-gradient(135deg, rgba(113, 89, 193, 1), rgba(142, 114, 220, 1));
   color: #fff;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 18px rgba(56, 90, 210, 0.4);
+  box-shadow: 0 10px 18px rgba(84, 64, 160, 0.4);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 22px rgba(56, 90, 210, 0.5);
+    box-shadow: 0 12px 22px rgba(84, 64, 160, 0.5);
+  }
+`;
+
+const SecondaryButton = styled.button`
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 16px;
+  border-radius: 16px;
+  background: rgba(18, 22, 36, 0.6);
+  color: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 22px rgba(113, 89, 193, 0.3);
+    border-color: rgba(113, 89, 193, 0.6);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  @media (prefers-color-scheme: light) {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(20, 30, 60, 0.2);
   }
 `;
 
@@ -453,7 +619,7 @@ const MessageBubble = styled.div`
   border-radius: 22px;
   background: ${(props) =>
     props.$role === 'user'
-      ? 'linear-gradient(135deg, rgba(74, 100, 255, 0.9), rgba(54, 70, 190, 0.8))'
+      ? 'linear-gradient(135deg, rgba(113, 89, 193, 0.95), rgba(95, 70, 168, 0.9))'
       : 'rgba(17, 20, 32, 0.85)'};
   box-shadow: 0 16px 30px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -462,7 +628,7 @@ const MessageBubble = styled.div`
   @media (prefers-color-scheme: light) {
     background: ${(props) =>
       props.$role === 'user'
-        ? 'linear-gradient(135deg, rgba(66, 120, 255, 0.9), rgba(130, 170, 255, 0.9))'
+        ? 'linear-gradient(135deg, rgba(113, 89, 193, 0.9), rgba(160, 140, 235, 0.9))'
         : 'rgba(255, 255, 255, 0.9)'};
     box-shadow: 0 16px 30px rgba(120, 130, 160, 0.18);
   }
@@ -476,11 +642,38 @@ const MessageMeta = styled.div`
   margin-bottom: 8px;
 `;
 
-const MessageContent = styled.p`
+const MessageContent = styled.div`
   margin: 0;
   font-size: 15px;
   line-height: 1.5;
   white-space: pre-wrap;
+
+  strong {
+    color: #fff;
+    font-weight: 700;
+    background: rgba(113, 89, 193, 0.25);
+    padding: 0 4px;
+    border-radius: 6px;
+  }
+`;
+
+const InlineCode = styled.code`
+  font-family: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: rgba(113, 89, 193, 0.25);
+  color: #fdf6ff;
+  padding: 2px 6px;
+  border-radius: 6px;
+`;
+
+const CodeBlock = styled.pre`
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(12, 12, 20, 0.9);
+  color: #f7f1ff;
+  overflow-x: auto;
+  border: 1px solid rgba(113, 89, 193, 0.35);
+  font-family: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, SFMono-Regular, Menlo, monospace;
 `;
 
 const TypingBubble = styled(MessageBubble)`
@@ -528,10 +721,10 @@ const Composer = styled.footer`
   right: 0;
   bottom: 0;
   padding: 20px 24px;
-  background: linear-gradient(180deg, rgba(8, 10, 18, 0) 0%, rgba(8, 10, 18, 0.9) 60%);
+  background: linear-gradient(180deg, rgba(8, 10, 18, 0) 0%, rgba(8, 6, 16, 0.9) 60%);
 
   @media (prefers-color-scheme: light) {
-    background: linear-gradient(180deg, rgba(235, 238, 248, 0) 0%, rgba(235, 238, 248, 0.92) 60%);
+    background: linear-gradient(180deg, rgba(235, 238, 248, 0) 0%, rgba(240, 236, 250, 0.92) 60%);
   }
 `;
 
@@ -576,11 +769,11 @@ const SendButton = styled.button`
   border: none;
   padding: 12px 20px;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(82, 120, 255, 1), rgba(116, 155, 255, 1));
+  background: linear-gradient(135deg, rgba(113, 89, 193, 1), rgba(142, 114, 220, 1));
   color: #fff;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 18px rgba(56, 90, 210, 0.4);
+  box-shadow: 0 10px 18px rgba(84, 64, 160, 0.4);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:disabled {
@@ -591,8 +784,97 @@ const SendButton = styled.button`
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 12px 22px rgba(56, 90, 210, 0.5);
+    box-shadow: 0 12px 22px rgba(84, 64, 160, 0.5);
   }
 `;
+
+const HistoryPanel = styled.section`
+  margin-top: 24px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: rgba(18, 20, 36, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  @media (prefers-color-scheme: light) {
+    background: rgba(255, 255, 255, 0.85);
+  }
+`;
+
+const HistoryInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  small {
+    opacity: 0.7;
+  }
+`;
+
+const HistoryActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+`;
+
+const HiddenInput = styled.input`
+  display: none;
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 8, 16, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 20;
+`;
+
+const ModalCard = styled.section`
+  width: min(720px, 100%);
+  padding: 20px 24px;
+  border-radius: 20px;
+  background: rgba(16, 20, 34, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(18px);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+`;
+
+const IconButton = styled.button`
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+`;
+
+const Toast = styled.div`
+  position: fixed;
+  right: 24px;
+  bottom: 110px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: rgba(113, 89, 193, 0.95);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 12px 24px rgba(84, 64, 160, 0.4);
+  z-index: 30;
+`;
+
+const StrongText = styled.strong``;
 
 export default App;
