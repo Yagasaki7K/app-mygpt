@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "id": "c87274b7-88ff-4881-ac52-fbc9269eadbd",
+    "timestamp": "2026-02-04T18:30:01.697Z",
+    "role": "user",
+    "content": "Olá",
+    "provider": "moonshotai/kimi-k2.5"
+  },
+  {
+    "id": "389699ba-5ec6-4f29-bf12-d004f46c06dd",
+    "timestamp": "2026-02-04T18:30:28.259Z",
+    "role": "assistant",
+    "content": " Olá! Como vai? É um prazer falar com você em português.\n\nComo posso ajudá-lo(a) hoje?",
+    "provider": "moonshotai/kimi-k2.5"
+  },
+  {
+    "id": "0d88be18-ccc6-48f5-bd6f-fa8c46bc4557",
+    "timestamp": "2026-02-04T18:31:51.836Z",
+    "role": "user",
+    "content": "Quanto é 1+1?",
+    "provider": "moonshotai/kimi-k2.5"
+  },
+  {
+    "id": "25dbb2f5-8c05-44db-bc22-1690b8ec1fbc",
+    "timestamp": "2026-02-04T18:32:05.438Z",
+    "role": "assistant",
+    "content": " 1 + 1 é igual a **2**.",
+    "provider": "moonshotai/kimi-k2.5"
+  }
+]
