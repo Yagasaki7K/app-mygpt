@@ -74,7 +74,7 @@ const App = () => {
           setMessages(data);
         }
       } catch (error) {
-        console.warn('Histórico inválido no armazenamento local.', error);
+        console.warn('Invalid history in local storage.', error);
       } finally {
         hasLoadedHistory.current = true;
       }
@@ -168,13 +168,13 @@ const App = () => {
     if (data.status === 'ok') {
       setProviderForm({ url: '', model: '', token: '' });
       setProviderStatus('');
-      setToast(`Modelo ${data.provider.model} salvo.`);
+      setToast(`Model ${data.provider.model} saved.`);
       await loadProviders();
       setActiveProvider(data.provider.model);
       setIsProviderModalOpen(false);
       return;
     }
-    setProviderStatus(data.message || 'Não foi possível salvar o provedor.');
+    setProviderStatus(data.message || 'Unable to save provider.');
   };
 
   useEffect(() => {
@@ -198,7 +198,7 @@ const App = () => {
 
   const normalizeImportedHistory = (data) => {
     if (!Array.isArray(data)) {
-      throw new Error('Formato inválido.');
+      throw new Error('Invalid format.');
     }
     return data.map((entry, index) => {
       if (typeof entry === 'string') {
@@ -207,7 +207,7 @@ const App = () => {
           timestamp: new Date().toISOString(),
           role: 'user',
           content: entry,
-          provider: activeProvider || 'importado'
+          provider: activeProvider || 'imported'
         };
       }
       const content = entry?.content ?? '';
@@ -216,7 +216,7 @@ const App = () => {
         timestamp: entry?.timestamp || new Date(Date.now() + index).toISOString(),
         role: entry?.role || 'user',
         content,
-        provider: entry?.provider || activeProvider || 'importado'
+        provider: entry?.provider || activeProvider || 'imported'
       };
     });
   };
@@ -233,9 +233,9 @@ const App = () => {
         const normalized = normalizeImportedHistory(data);
         setMessages(normalized);
         persistHistory(normalized);
-        setToast('Histórico importado com sucesso.');
+        setToast('History imported successfully.');
       } catch (error) {
-        setToast('Não foi possível importar o histórico.');
+        setToast('Unable to import history.');
       } finally {
         event.target.value = '';
       }
@@ -299,7 +299,7 @@ const App = () => {
       <Header>
         <TitleArea>
           <Title>MyGPT</Title>
-          <Subtitle>Histórico contínuo com múltiplas IAs</Subtitle>
+          <Subtitle>Continuous history with multiple AIs</Subtitle>
         </TitleArea>
         <HeaderControls>
           <ProviderSelect
@@ -308,7 +308,7 @@ const App = () => {
             disabled={providers.length === 0}
           >
             {providers.length === 0 ? (
-              <option>Sem provedores válidos</option>
+              <option>No valid providers</option>
             ) : (
               providers.map((provider) => (
                 <option key={provider.model} value={provider.model}>
@@ -318,22 +318,22 @@ const App = () => {
             )}
           </ProviderSelect>
           <SecondaryButton type="button" onClick={() => setIsProviderModalOpen(true)}>
-            Adicionar provedor
+            Add provider
           </SecondaryButton>
         </HeaderControls>
       </Header>
 
       <HistoryPanel>
         <HistoryInfo>
-          <span>Histórico salvo localmente.</span>
-          <small>Importe ou exporte em JSON quando quiser.</small>
+          <span>History is saved locally.</span>
+          <small>Import or export JSON anytime.</small>
         </HistoryInfo>
         <HistoryActions>
           <SecondaryButton type="button" onClick={handleTriggerImport}>
-            Importar JSON
+            Import JSON
           </SecondaryButton>
           <SecondaryButton type="button" onClick={handleExportHistory} disabled={messages.length === 0}>
-            Exportar JSON
+            Export JSON
           </SecondaryButton>
           <HiddenInput
             ref={importInputRef}
@@ -348,14 +348,14 @@ const App = () => {
         <ModalOverlay>
           <ModalCard>
             <ModalHeader>
-              <ProviderTitle>Adicionar provedor</ProviderTitle>
+              <ProviderTitle>Add provider</ProviderTitle>
               <IconButton type="button" onClick={() => setIsProviderModalOpen(false)}>
                 ✕
               </IconButton>
             </ModalHeader>
             <ProviderForm onSubmit={handleSaveProvider}>
               <FieldGroup>
-                <FieldLabel htmlFor="provider-url">URL da API</FieldLabel>
+                <FieldLabel htmlFor="provider-url">API URL</FieldLabel>
                 <FieldInput
                   id="provider-url"
                   name="url"
@@ -367,7 +367,7 @@ const App = () => {
                 />
               </FieldGroup>
               <FieldGroup>
-                <FieldLabel htmlFor="provider-model">Modelo</FieldLabel>
+                <FieldLabel htmlFor="provider-model">Model</FieldLabel>
                 <FieldInput
                   id="provider-model"
                   name="model"
@@ -391,7 +391,7 @@ const App = () => {
                 />
               </FieldGroup>
               <ProviderActions>
-                <PrimaryButton type="submit">Salvar provedor</PrimaryButton>
+                <PrimaryButton type="submit">Save provider</PrimaryButton>
                 {providerStatus && <StatusText>{providerStatus}</StatusText>}
               </ProviderActions>
             </ProviderForm>
@@ -404,8 +404,8 @@ const App = () => {
           <MessageRow key={message.id} $role={message.role}>
             <MessageBubble $role={message.role}>
               <MessageMeta>
-                <span>{message.role === 'user' ? 'Você' : message.provider}</span>
-                <span>{new Date(message.timestamp).toLocaleTimeString('pt-BR')}</span>
+                <span>{message.role === 'user' ? 'You' : message.provider}</span>
+                <span>{new Date(message.timestamp).toLocaleTimeString('en-US')}</span>
               </MessageMeta>
               <MessageContent>{renderMessageContent(message.content)}</MessageContent>
             </MessageBubble>
@@ -414,7 +414,7 @@ const App = () => {
         {isTyping && (
           <MessageRow $role="assistant">
             <TypingBubble>
-              <span>{activeProvider || 'IA'} está pensando ...</span>
+              <span>{activeProvider || 'AI'} is thinking ...</span>
               <TypingDots>
                 <span />
                 <span />
@@ -430,13 +430,13 @@ const App = () => {
         <ComposerInner>
           <TextInput
             rows={1}
-            placeholder="Digite sua mensagem..."
+            placeholder="Type your message..."
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={handleKeyDown}
           />
           <SendButton onClick={handleSend} disabled={!canSend}>
-            Enviar
+            Send
           </SendButton>
         </ComposerInner>
       </Composer>
