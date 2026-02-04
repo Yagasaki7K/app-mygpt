@@ -1,0 +1,10 @@
+[
+  {
+    "name": "OpenAI",
+    "token": "sk-xxxx"
+  },
+  {
+    "name": "OutraIA",
+    "token": ""
+  }
+]
