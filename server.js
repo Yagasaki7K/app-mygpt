@@ -11,6 +11,40 @@ const PORT = 5174;
 const historyPath = path.join(__dirname, 'history.json');
 const providersPath = path.join(__dirname, 'providers.json');
 
+const sanitizeProvider = (provider) => ({
+  model: provider.model,
+  url: provider.url
+});
+
+const isValidProvider = (provider) =>
+  provider &&
+  provider.model &&
+  provider.url &&
+  provider.token &&
+  provider.model.trim() !== '' &&
+  provider.url.trim() !== '' &&
+  provider.token.trim() !== '';
+
+const buildPayload = (message, model) => ({
+  model,
+  messages: [
+    {
+      role: 'user',
+      content: message
+    }
+  ]
+});
+
+const formatContent = (value, fallback) => {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value !== undefined) {
+    return JSON.stringify(value, null, 2);
+  }
+  return JSON.stringify(fallback, null, 2);
+};
+
 const readJsonFile = async (filePath, fallback) => {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
@@ -31,8 +65,19 @@ const writeJsonFile = async (filePath, data) => {
 const app = new Elysia({ adapter: node() })
   .get('/api/providers', async () => {
   const providers = await readJsonFile(providersPath, []);
-  const validProviders = providers.filter((provider) => provider.token && provider.token.trim() !== '');
-  return validProviders;
+  return providers.filter(isValidProvider).map(sanitizeProvider);
+})
+  .post('/api/providers', async ({ body }) => {
+  const { model, url, token } = body ?? {};
+  const providers = await readJsonFile(providersPath, []);
+  const nextProvider = { model, url, token };
+  if (!isValidProvider(nextProvider)) {
+    return { status: 'error', message: 'Informe modelo, URL e token válidos.' };
+  }
+  const updatedProviders = providers.filter((provider) => provider.model !== model);
+  updatedProviders.push(nextProvider);
+  await writeJsonFile(providersPath, updatedProviders);
+  return { status: 'ok', provider: sanitizeProvider(nextProvider) };
 })
   .get('/api/history', async () => {
   const history = await readJsonFile(historyPath, []);
@@ -52,14 +97,51 @@ const app = new Elysia({ adapter: node() })
 })
   .post('/api/chat', async ({ body }) => {
   const { provider, message } = body;
-  const reply = {
-    id: crypto.randomUUID(),
-    timestamp: new Date().toISOString(),
-    role: 'assistant',
-    content: `Resposta gerada por ${provider}: ${message.slice(0, 120)}`,
-    provider
-  };
-  return reply;
+  const providers = await readJsonFile(providersPath, []);
+  const selectedProvider = providers.find((item) => item.model === provider);
+  if (!selectedProvider || !isValidProvider(selectedProvider)) {
+    return {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      role: 'assistant',
+      content: 'Não encontrei um provedor válido. Verifique o modelo selecionado e o cadastro.',
+      provider
+    };
+  }
+
+  try {
+    const payload = buildPayload(message, selectedProvider.model);
+    const response = await fetch(selectedProvider.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${selectedProvider.token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    const content = formatContent(
+      data?.choices?.[0]?.message?.content ??
+        data?.choices?.[0]?.text ??
+        data?.output_text,
+      data
+    );
+    return {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      role: 'assistant',
+      content,
+      provider: selectedProvider.model
+    };
+  } catch (error) {
+    return {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      role: 'assistant',
+      content: 'Não foi possível completar a requisição agora. Verifique a URL e o token.',
+      provider: selectedProvider.model
+    };
+  }
 })
   .listen(PORT);
 
