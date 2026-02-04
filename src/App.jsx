@@ -538,6 +538,8 @@ const ProviderActions = styled.div`
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  grid-column: 1 / -1;
 `;
 
 const PrimaryButton = styled.button`
@@ -751,6 +753,7 @@ const Composer = styled.footer`
 
 const ComposerInner = styled.div`
   display: flex;
+  align-items: center;
   gap: 12px;
   padding: 16px;
   border-radius: 24px;
@@ -783,6 +786,7 @@ const TextInput = styled.textarea`
   resize: none;
   outline: none;
   line-height: 1.5;
+  text-align: center;
 
   &::placeholder {
     color: rgba(255, 255, 255, 0.6);
