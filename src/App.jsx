@@ -42,9 +42,11 @@ const App = () => {
   const [providerStatus, setProviderStatus] = useState('');
   const [toast, setToast] = useState('');
   const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
+  const [isClearPending, setIsClearPending] = useState(false);
   const bottomRef = useRef(null);
   const hasLoadedHistory = useRef(false);
   const importInputRef = useRef(null);
+  const clearTimeoutRef = useRef(null);
 
   const HISTORY_STORAGE_KEY = 'mygpt-history';
 
@@ -248,17 +250,22 @@ const App = () => {
   };
 
   const handleClearConversation = () => {
-    const confirmed = window.confirm(
-      'Esta conversa será deletada permanentemente do seu histórico local. Deseja continuar?'
-    );
-    if (!confirmed) {
+    if (!isClearPending) {
+      setIsClearPending(true);
+      setToast('This will permanently delete your local conversation. Click again to confirm.');
+      clearTimeoutRef.current = setTimeout(() => {
+        setIsClearPending(false);
+      }, 4000);
       return;
     }
+
+    clearTimeoutRef.current && clearTimeout(clearTimeoutRef.current);
+    setIsClearPending(false);
     localStorage.removeItem(HISTORY_STORAGE_KEY);
     setMessages([]);
     setInput('');
     setIsTyping(false);
-    setToast('Conversa limpa com sucesso.');
+    setToast('Conversation cleared.');
   };
 
   const renderInlineMarkdown = (text) => {
