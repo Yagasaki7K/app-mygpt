@@ -34,21 +34,29 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [providerForm, setProviderForm] = useState({
+    url: '',
+    model: '',
+    token: ''
+  });
+  const [providerStatus, setProviderStatus] = useState('');
   const bottomRef = useRef(null);
   const hasLoadedHistory = useRef(false);
 
   const canSend = useMemo(() => input.trim().length > 0 && activeProvider, [input, activeProvider]);
 
-  useEffect(() => {
-    const loadProviders = async () => {
-      const response = await fetch(`${API_BASE}/providers`);
-      const data = await response.json();
-      setProviders(data);
-      if (data.length > 0) {
-        setActiveProvider(data[0].name);
-      }
-    };
+  const loadProviders = async () => {
+    const response = await fetch(`${API_BASE}/providers`);
+    const data = await response.json();
+    setProviders(data);
+    if (data.length > 0) {
+      setActiveProvider((current) => current || data[0].name);
+    } else {
+      setActiveProvider('');
+    }
+  };
 
+  useEffect(() => {
     const loadHistory = async () => {
       const response = await fetch(`${API_BASE}/history`);
       const data = await response.json();
@@ -125,6 +133,39 @@ const App = () => {
     }
   };
 
+  const handleProviderChange = (event) => {
+    const { name, value } = event.target;
+    setProviderForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveProvider = async (event) => {
+    event.preventDefault();
+    setProviderStatus('');
+    const payload = {
+      name: providerForm.model.trim(),
+      model: providerForm.model.trim(),
+      url: providerForm.url.trim(),
+      token: providerForm.token.trim()
+    };
+
+    const response = await fetch(`${API_BASE}/providers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (data.status === 'ok') {
+      setProviderForm({ url: '', model: '', token: '' });
+      setProviderStatus(`Modelo ${data.provider.name} salvo.`);
+      await loadProviders();
+      setActiveProvider(data.provider.name);
+      return;
+    }
+    setProviderStatus(data.message || 'Não foi possível salvar o provedor.');
+  };
+
   return (
     <Shell>
       <GlobalStyle />
@@ -149,6 +190,52 @@ const App = () => {
           )}
         </ProviderSelect>
       </Header>
+
+      <ProviderCard>
+        <ProviderTitle>Adicionar provedor</ProviderTitle>
+        <ProviderForm onSubmit={handleSaveProvider}>
+          <FieldGroup>
+            <FieldLabel htmlFor="provider-url">URL da API</FieldLabel>
+            <FieldInput
+              id="provider-url"
+              name="url"
+              type="url"
+              placeholder="https://integrate.api.nvidia.com/v1/chat/completions"
+              value={providerForm.url}
+              onChange={handleProviderChange}
+              required
+            />
+          </FieldGroup>
+          <FieldGroup>
+            <FieldLabel htmlFor="provider-model">Modelo</FieldLabel>
+            <FieldInput
+              id="provider-model"
+              name="model"
+              type="text"
+              placeholder="moonshotai/kimi-k2.5"
+              value={providerForm.model}
+              onChange={handleProviderChange}
+              required
+            />
+          </FieldGroup>
+          <FieldGroup>
+            <FieldLabel htmlFor="provider-token">Token</FieldLabel>
+            <FieldInput
+              id="provider-token"
+              name="token"
+              type="password"
+              placeholder="sk-..."
+              value={providerForm.token}
+              onChange={handleProviderChange}
+              required
+            />
+          </FieldGroup>
+          <ProviderActions>
+            <PrimaryButton type="submit">Salvar provedor</PrimaryButton>
+            {providerStatus && <StatusText>{providerStatus}</StatusText>}
+          </ProviderActions>
+        </ProviderForm>
+      </ProviderCard>
 
       <ChatArea>
         {messages.map((message) => (
@@ -229,6 +316,91 @@ const TitleArea = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
+`;
+
+const ProviderCard = styled.section`
+  margin-top: 24px;
+  padding: 20px 24px;
+  border-radius: 20px;
+  background: rgba(16, 20, 34, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(18px);
+
+  @media (prefers-color-scheme: light) {
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 14px 28px rgba(120, 130, 160, 0.18);
+  }
+`;
+
+const ProviderTitle = styled.h2`
+  margin: 0 0 12px;
+  font-size: 16px;
+`;
+
+const ProviderForm = styled.form`
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+`;
+
+const FieldGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const FieldLabel = styled.label`
+  font-size: 12px;
+  opacity: 0.7;
+`;
+
+const FieldInput = styled.input`
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(12, 15, 26, 0.8);
+  color: inherit;
+  font-size: 14px;
+
+  &:focus {
+    outline: 2px solid rgba(82, 120, 255, 0.7);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-color-scheme: light) {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(20, 30, 60, 0.2);
+  }
+`;
+
+const ProviderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const PrimaryButton = styled.button`
+  border: none;
+  padding: 12px 20px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(82, 120, 255, 1), rgba(116, 155, 255, 1));
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 18px rgba(56, 90, 210, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 22px rgba(56, 90, 210, 0.5);
+  }
+`;
+
+const StatusText = styled.span`
+  font-size: 13px;
+  opacity: 0.75;
 `;
 
 const Title = styled.h1`
