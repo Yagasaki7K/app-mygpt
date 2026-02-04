@@ -42,9 +42,11 @@ const App = () => {
   const [providerStatus, setProviderStatus] = useState('');
   const [toast, setToast] = useState('');
   const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
+  const [isClearPending, setIsClearPending] = useState(false);
   const bottomRef = useRef(null);
   const hasLoadedHistory = useRef(false);
   const importInputRef = useRef(null);
+  const clearTimeoutRef = useRef(null);
 
   const HISTORY_STORAGE_KEY = 'mygpt-history';
 
@@ -247,6 +249,25 @@ const App = () => {
     importInputRef.current?.click();
   };
 
+  const handleClearConversation = () => {
+    if (!isClearPending) {
+      setIsClearPending(true);
+      setToast('This will permanently delete your local conversation. Click again to confirm.');
+      clearTimeoutRef.current = setTimeout(() => {
+        setIsClearPending(false);
+      }, 4000);
+      return;
+    }
+
+    clearTimeoutRef.current && clearTimeout(clearTimeoutRef.current);
+    setIsClearPending(false);
+    localStorage.removeItem(HISTORY_STORAGE_KEY);
+    setMessages([]);
+    setInput('');
+    setIsTyping(false);
+    setToast('Conversation cleared.');
+  };
+
   const renderInlineMarkdown = (text) => {
     const parts = text.split(/(\*\*[^*]+\*\*|_[^_]+_|`[^`]+`)/g);
     return parts.map((part, index) => {
@@ -320,6 +341,13 @@ const App = () => {
           <SecondaryButton type="button" onClick={() => setIsProviderModalOpen(true)}>
             Add provider
           </SecondaryButton>
+          <DestructiveButton
+            type="button"
+            onClick={handleClearConversation}
+            disabled={messages.length === 0}
+          >
+            Limpar conversa
+          </DestructiveButton>
         </HeaderControls>
       </Header>
 
@@ -583,6 +611,21 @@ const SecondaryButton = styled.button`
   @media (prefers-color-scheme: light) {
     background: rgba(255, 255, 255, 0.8);
     border-color: rgba(20, 30, 60, 0.2);
+  }
+`;
+
+const DestructiveButton = styled(SecondaryButton)`
+  border-color: rgba(255, 122, 122, 0.45);
+  color: rgba(255, 214, 214, 0.95);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 12px 22px rgba(255, 90, 90, 0.25);
+    border-color: rgba(255, 122, 122, 0.8);
+  }
+
+  @media (prefers-color-scheme: light) {
+    color: rgba(140, 0, 0, 0.9);
+    border-color: rgba(180, 40, 40, 0.4);
   }
 `;
 
