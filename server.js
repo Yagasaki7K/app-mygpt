@@ -12,18 +12,15 @@ const historyPath = path.join(__dirname, 'history.json');
 const providersPath = path.join(__dirname, 'providers.json');
 
 const sanitizeProvider = (provider) => ({
-  name: provider.name,
   model: provider.model,
   url: provider.url
 });
 
 const isValidProvider = (provider) =>
   provider &&
-  provider.name &&
   provider.model &&
   provider.url &&
   provider.token &&
-  provider.name.trim() !== '' &&
   provider.model.trim() !== '' &&
   provider.url.trim() !== '' &&
   provider.token.trim() !== '';
@@ -71,13 +68,13 @@ const app = new Elysia({ adapter: node() })
   return providers.filter(isValidProvider).map(sanitizeProvider);
 })
   .post('/api/providers', async ({ body }) => {
-  const { name, model, url, token } = body ?? {};
+  const { model, url, token } = body ?? {};
   const providers = await readJsonFile(providersPath, []);
-  const nextProvider = { name, model, url, token };
+  const nextProvider = { model, url, token };
   if (!isValidProvider(nextProvider)) {
-    return { status: 'error', message: 'Informe nome, modelo, URL e token válidos.' };
+    return { status: 'error', message: 'Informe modelo, URL e token válidos.' };
   }
-  const updatedProviders = providers.filter((provider) => provider.name !== name);
+  const updatedProviders = providers.filter((provider) => provider.model !== model);
   updatedProviders.push(nextProvider);
   await writeJsonFile(providersPath, updatedProviders);
   return { status: 'ok', provider: sanitizeProvider(nextProvider) };
@@ -101,7 +98,7 @@ const app = new Elysia({ adapter: node() })
   .post('/api/chat', async ({ body }) => {
   const { provider, message } = body;
   const providers = await readJsonFile(providersPath, []);
-  const selectedProvider = providers.find((item) => item.name === provider);
+  const selectedProvider = providers.find((item) => item.model === provider);
   if (!selectedProvider || !isValidProvider(selectedProvider)) {
     return {
       id: crypto.randomUUID(),
@@ -134,7 +131,7 @@ const app = new Elysia({ adapter: node() })
       timestamp: new Date().toISOString(),
       role: 'assistant',
       content,
-      provider: selectedProvider.name
+      provider: selectedProvider.model
     };
   } catch (error) {
     return {
@@ -142,7 +139,7 @@ const app = new Elysia({ adapter: node() })
       timestamp: new Date().toISOString(),
       role: 'assistant',
       content: 'Não foi possível completar a requisição agora. Verifique a URL e o token.',
-      provider: selectedProvider.name
+      provider: selectedProvider.model
     };
   }
 })

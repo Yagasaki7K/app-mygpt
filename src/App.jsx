@@ -50,7 +50,7 @@ const App = () => {
     const data = await response.json();
     setProviders(data);
     if (data.length > 0) {
-      setActiveProvider((current) => current || data[0].name);
+      setActiveProvider((current) => current || data[0].model);
     } else {
       setActiveProvider('');
     }
@@ -142,7 +142,6 @@ const App = () => {
     event.preventDefault();
     setProviderStatus('');
     const payload = {
-      name: providerForm.model.trim(),
       model: providerForm.model.trim(),
       url: providerForm.url.trim(),
       token: providerForm.token.trim()
@@ -158,9 +157,9 @@ const App = () => {
     const data = await response.json();
     if (data.status === 'ok') {
       setProviderForm({ url: '', model: '', token: '' });
-      setProviderStatus(`Modelo ${data.provider.name} salvo.`);
+      setProviderStatus(`Modelo ${data.provider.model} salvo.`);
       await loadProviders();
-      setActiveProvider(data.provider.name);
+      setActiveProvider(data.provider.model);
       return;
     }
     setProviderStatus(data.message || 'Não foi possível salvar o provedor.');
@@ -183,8 +182,8 @@ const App = () => {
             <option>Sem provedores válidos</option>
           ) : (
             providers.map((provider) => (
-              <option key={provider.name} value={provider.name}>
-                {provider.name}
+              <option key={provider.model} value={provider.model}>
+                {provider.model}
               </option>
             ))
           )}
