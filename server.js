@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Elysia } from 'elysia';
 import { node } from '@elysiajs/node';
 import fs from 'fs/promises';
@@ -16,14 +17,24 @@ const sanitizeProvider = (provider) => ({
   url: provider.url
 });
 
+const resolveToken = (token = '') => {
+  const trimmed = token.trim();
+  const match = trimmed.match(/^(?:\\$\\{?([A-Z0-9_]+)\\}?|env:([A-Z0-9_]+))$/);
+  const envKey = match?.[1] || match?.[2];
+  if (envKey) {
+    return process.env[envKey] ?? '';
+  }
+  return trimmed;
+};
+
 const isValidProvider = (provider) =>
   provider &&
   provider.model &&
   provider.url &&
-  provider.token &&
+  resolveToken(provider.token) &&
   provider.model.trim() !== '' &&
   provider.url.trim() !== '' &&
-  provider.token.trim() !== '';
+  resolveToken(provider.token) !== '';
 
 const buildPayload = (message, model) => ({
   model,
@@ -111,11 +122,12 @@ const app = new Elysia({ adapter: node() })
 
   try {
     const payload = buildPayload(message, selectedProvider.model);
+    const token = resolveToken(selectedProvider.token);
     const response = await fetch(selectedProvider.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${selectedProvider.token}`
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(payload)
     });

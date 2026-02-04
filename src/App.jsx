@@ -8,7 +8,7 @@ const GlobalStyle = createGlobalStyle`
 
   body {
     margin: 0;
-    font-family: 'SF Pro Text', 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Poppins', 'SF Pro Text', 'Inter', system-ui, -apple-system, sans-serif;
     background: radial-gradient(circle at top, rgba(80, 60, 130, 0.85), rgba(8, 6, 16, 1));
     color: #f5f7ff;
     min-height: 100vh;
@@ -248,15 +248,33 @@ const App = () => {
   };
 
   const renderInlineMarkdown = (text) => {
-    const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+    const parts = text.split(/(\*\*[^*]+\*\*|_[^_]+_|`[^`]+`)/g);
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
         return <StrongText key={index}>{part.slice(2, -2)}</StrongText>;
+      }
+      if (part.startsWith('_') && part.endsWith('_')) {
+        return <EmText key={index}>{part.slice(1, -1)}</EmText>;
       }
       if (part.startsWith('`') && part.endsWith('`')) {
         return <InlineCode key={index}>{part.slice(1, -1)}</InlineCode>;
       }
       return <span key={index}>{part}</span>;
+    });
+  };
+
+  const renderTextSegment = (segment) => {
+    const lines = segment.split('\n');
+    return lines.map((line, lineIndex) => {
+      const headingMatch = line.match(/^(#{1,4})\s+(.+)/);
+      const content = headingMatch ? headingMatch[2] : line;
+      const rendered = renderInlineMarkdown(content);
+      return (
+        <React.Fragment key={lineIndex}>
+          {headingMatch ? <StrongText>{rendered}</StrongText> : rendered}
+          {lineIndex < lines.length - 1 && <br />}
+        </React.Fragment>
+      );
     });
   };
 
@@ -271,7 +289,7 @@ const App = () => {
           </CodeBlock>
         );
       }
-      return <span key={index}>{renderInlineMarkdown(segment)}</span>;
+      return <span key={index}>{renderTextSegment(segment)}</span>;
     });
   };
 
@@ -396,7 +414,7 @@ const App = () => {
         {isTyping && (
           <MessageRow $role="assistant">
             <TypingBubble>
-              <span>IA digitando</span>
+              <span>{activeProvider || 'IA'} está pensando ...</span>
               <TypingDots>
                 <span />
                 <span />
@@ -435,6 +453,9 @@ const Shell = styled.div`
 `;
 
 const Header = styled.header`
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -733,14 +754,23 @@ const ComposerInner = styled.div`
   gap: 12px;
   padding: 16px;
   border-radius: 24px;
-  background: rgba(18, 22, 36, 0.8);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18),
+    rgba(120, 160, 255, 0.08),
+    rgba(255, 255, 255, 0.12)
+  );
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(26px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 
   @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 14px 28px rgba(120, 130, 160, 0.18);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.85),
+      rgba(200, 220, 255, 0.45)
+    );
+    box-shadow: 0 16px 30px rgba(120, 130, 160, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 `;
 
@@ -876,5 +906,9 @@ const Toast = styled.div`
 `;
 
 const StrongText = styled.strong``;
+
+const EmText = styled.em`
+  font-style: italic;
+`;
 
 export default App;
