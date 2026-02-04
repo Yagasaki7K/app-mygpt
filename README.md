@@ -1,3 +1,128 @@
+# MyGPT (secure local multi-LLM)
+
+MyGPT is a local interface to chat with multiple large language models (LLMs) in one place, keeping your keys and history under your control. It works with any provider compatible with the OpenAI-style API (`chat/completions`) and lets you switch models quickly without exposing tokens in the front-end.
+
+## Key benefits
+
+- **Centralizes multiple LLMs in one dashboard**: switch between Gemini, OpenAI, Claude, Copilot (or any compatible provider) without leaving the app.
+- **Local and secure execution**: the back end runs locally and makes requests directly to providers; tokens stay on the server and/or in your `.env`.
+- **Local history**: your conversations are stored locally and can be exported/imported as JSON.
+- **Fast, lightweight interface**: UI built with React + Vite with a focus on usability.
+
+## How it works (overview)
+
+1. **Front-end** (React/Vite) renders the chat UI and model selector.
+2. **Local back-end** (Elysia/Node) receives messages, resolves tokens from `.env`, and forwards them to the provider.
+3. **Local persistence**: history and providers are stored in `history.json` and `providers.json`.
+
+## Requirements
+
+- Node.js 18+ (recommended)
+- npm (or another package manager, but the commands below use npm)
+
+## Token configuration (required for use)
+
+1. **Create the `.env` file** from the example:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Fill in your keys** in `.env`:
+
+   ```env
+   GEMINI_TOKEN=...
+   OPENAI_TOKEN=...
+   CLAUDE_TOKEN=...
+   COPILOT_TOKEN=...
+   TOKEN=... # optional generic token used by providers
+   ```
+
+> ⚠️ `.env` is never committed. It is ignored by `.gitignore`.
+
+## Provider setup
+
+Providers are configured in `providers.json`. Each entry requires:
+
+- `model`: model name to send in the payload
+- `url`: OpenAI-compatible endpoint
+- `token`: literal token **or** an environment variable reference like `${GEMINI_TOKEN}`
+
+Example:
+
+```json
+[
+  {
+    "model": "gemini-1.5-pro",
+    "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    "token": "${GEMINI_TOKEN}"
+  }
+]
+```
+
+You can also reference environment variables in the URL or token using:
+
+- `${TOKEN}`
+- `env:TOKEN`
+- `process.env.TOKEN`
+
+> 🔐 **Best practices**: always use `${VARIABLE_NAME}` (or `process.env.VARIABLE_NAME`) in `providers.json` to keep tokens out of the repo.
+
+## Running locally
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Start the development environment:
+
+   ```bash
+   npm run dev
+   ```
+
+This starts:
+
+- **Local API** at `http://localhost:5174`
+- **Front-end** at `http://localhost:5173`
+
+## Basic usage
+
+1. Open the application in your browser.
+2. Select a provider/model at the top.
+3. Send messages normally.
+4. Export/import history when needed.
+
+## Security
+
+- Tokens stay on the server and/or `.env`.
+- The front-end never receives your tokens.
+- History stays on your machine (local file).
+
+## Project structure
+
+```
+.
+├── server.js         # Local API that talks to providers
+├── providers.json    # Provider list (with tokens/variables)
+├── history.json      # Locally persisted history
+├── src/              # React front-end
+└── .env.example      # Environment variable example
+```
+
+## Tips
+
+- To add new providers, add more objects to `providers.json`.
+- To rotate tokens, edit only `.env`.
+- You can also add providers via the UI ("Add provider" button).
+
+## License
+
+Free to use for personal and internal purposes.
+
+---
+
 # MyGPT (multi-LLM local seguro)
 
 O MyGPT é uma interface local para conversar com múltiplos modelos de linguagem (LLMs) em um único lugar, mantendo suas chaves e histórico sob seu controle. Ele funciona com qualquer provedor compatível com a API estilo OpenAI (endpoint de `chat/completions`) e permite alternar modelos rapidamente sem expor tokens no front-end.
@@ -35,6 +160,7 @@ O MyGPT é uma interface local para conversar com múltiplos modelos de linguage
    OPENAI_TOKEN=...
    CLAUDE_TOKEN=...
    COPILOT_TOKEN=...
+   TOKEN=... # token genérico opcional usado pelos provedores
    ```
 
 > ⚠️ O `.env` nunca é commitado. Ele fica ignorado no `.gitignore`.
@@ -59,7 +185,13 @@ Exemplo:
 ]
 ```
 
-> 🔐 **Boas práticas**: use sempre `${NOME_DA_VARIAVEL}` no `providers.json` para manter seus tokens fora do repo.
+Você também pode referenciar variáveis de ambiente na URL ou no token usando:
+
+- `${TOKEN}`
+- `env:TOKEN`
+- `process.env.TOKEN`
+
+> 🔐 **Boas práticas**: use sempre `${NOME_DA_VARIAVEL}` (ou `process.env.NOME_DA_VARIAVEL`) no `providers.json` para manter seus tokens fora do repo.
 
 ## Executando localmente
 

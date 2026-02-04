@@ -17,24 +17,29 @@ const sanitizeProvider = (provider) => ({
   url: provider.url
 });
 
-const resolveToken = (token = '') => {
-  const trimmed = token.trim();
-  const match = trimmed.match(/^(?:\\$\\{?([A-Z0-9_]+)\\}?|env:([A-Z0-9_]+))$/);
-  const envKey = match?.[1] || match?.[2];
+const resolveEnvValue = (value = '') => {
+  const trimmed = value.trim();
+  const match = trimmed.match(
+    /^(?:\$\{?([A-Z0-9_]+)\}?|env:([A-Z0-9_]+)|process\.env\.([A-Z0-9_]+))$/
+  );
+  const envKey = match?.[1] || match?.[2] || match?.[3];
   if (envKey) {
     return process.env[envKey] ?? '';
   }
-  return trimmed;
+
+  return trimmed
+    .replace(/\$\{([A-Z0-9_]+)\}/g, (_, key) => process.env[key] ?? '')
+    .replace(/process\.env\.([A-Z0-9_]+)/g, (_, key) => process.env[key] ?? '');
 };
 
 const isValidProvider = (provider) =>
   provider &&
   provider.model &&
   provider.url &&
-  resolveToken(provider.token) &&
+  resolveEnvValue(provider.token) &&
   provider.model.trim() !== '' &&
   provider.url.trim() !== '' &&
-  resolveToken(provider.token) !== '';
+  resolveEnvValue(provider.token) !== '';
 
 const buildPayload = (message, model) => ({
   model,
@@ -122,7 +127,7 @@ const app = new Elysia({ adapter: node() })
 
   try {
     const payload = buildPayload(message, selectedProvider.model);
-    const token = resolveToken(selectedProvider.token);
+    const token = resolveEnvValue(selectedProvider.token);
     const response = await fetch(selectedProvider.url, {
       method: 'POST',
       headers: {
