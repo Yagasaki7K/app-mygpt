@@ -1,7 +1,7 @@
 [
-    {
-        "model": "moonshotai/kimi-k2.5",
-        "url": "https://integrate.api.nvidia.com/v1/chat/completions",
-        "token": "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"
-    }
+  {
+    "model": "gemini-1.5-pro",
+    "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    "token": "${GEMINI_TOKEN}"
+  }
 ]
