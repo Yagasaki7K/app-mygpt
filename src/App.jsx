@@ -52,6 +52,7 @@ const App = () => {
   const importInputRef = useRef(null);
   const clearTimeoutRef = useRef(null);
   const copyTimeoutRef = useRef(null);
+  const composerInputRef = useRef(null);
 
   const HISTORY_STORAGE_KEY = 'mygpt-history';
 
@@ -97,6 +98,21 @@ const App = () => {
     }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    const textarea = composerInputRef.current;
+    if (!textarea) {
+      return;
+    }
+
+    const computedStyle = window.getComputedStyle(textarea);
+    const lineHeight = parseFloat(computedStyle.lineHeight) || 24;
+    const maxHeight = lineHeight * 5;
+
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+  }, [input]);
 
   const persistHistory = (nextHistory) => {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
@@ -498,6 +514,7 @@ const App = () => {
       <Composer>
         <ComposerInner>
           <TextInput
+            ref={composerInputRef}
             rows={1}
             placeholder="Type your message..."
             value={input}
@@ -892,7 +909,25 @@ const TextInput = styled.textarea`
   resize: none;
   outline: none;
   line-height: 1.5;
-  text-align: center;
+  max-height: calc(1.5em * 5);
+  overflow-y: hidden;
+  text-align: left;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160, 138, 230, 0.65) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(160, 138, 230, 0.65);
+    border-radius: 999px;
+  }
 
   &::placeholder {
     color: rgba(255, 255, 255, 0.6);
