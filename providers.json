@@ -18,5 +18,15 @@
         "model": "moonshotai/kimi-k2.5",
         "url": "https://integrate.api.nvidia.com/v1/chat/completions",
         "token": "${NVIDIA_TOKEN}"
+    },
+    {
+        "model": "deepseek-chat",
+        "url": "https://api.deepseek.com/chat/completions",
+        "token": "${DEEPSEEK_TOKEN}"
+    },
+    {
+        "model": "gpt-5.2",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "token": "${OPENAI_TOKEN}"
     }
 ]
