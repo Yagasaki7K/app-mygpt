@@ -10,22 +10,13 @@ const GlobalStyle = createGlobalStyle`
   body {
     margin: 0;
     font-family: 'Poppins', 'SF Pro Text', 'Inter', system-ui, -apple-system, sans-serif;
-    background: radial-gradient(circle at top, rgba(80, 60, 130, 0.85), rgba(8, 6, 16, 1));
-    background-attachment: fixed;
-    color: #f5f7ff;
+    background: #f4f6f8;
+    color: #111827;
     min-height: 100vh;
   }
 
   #root {
     min-height: 100vh;
-  }
-
-  @media (prefers-color-scheme: light) {
-    body {
-      background: radial-gradient(circle at top, rgba(232, 226, 255, 0.9), rgba(240, 236, 250, 1));
-      background-attachment: fixed;
-      color: #0c0f1a;
-    }
   }
 `;
 
@@ -548,19 +539,14 @@ const Header = styled.header`
   gap: 24px;
   padding: 20px 24px;
   border-radius: 24px;
-  background: rgba(34, 24, 56, 0.6);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 40px rgba(120, 130, 160, 0.16);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 
   @media (max-width: 720px) {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.7);
-    box-shadow: 0 12px 40px rgba(120, 130, 160, 0.18);
   }
 `;
 
@@ -646,10 +632,10 @@ const PrimaryButton = styled.button`
 `;
 
 const SecondaryButton = styled.button`
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(15, 23, 42, 0.12);
   padding: 10px 16px;
   border-radius: 16px;
-  background: rgba(18, 22, 36, 0.6);
+  background: rgba(255, 255, 255, 0.8);
   color: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -666,10 +652,6 @@ const SecondaryButton = styled.button`
     cursor: not-allowed;
   }
 
-  @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(20, 30, 60, 0.2);
-  }
 `;
 
 const DestructiveButton = styled(SecondaryButton)`
@@ -705,9 +687,9 @@ const Subtitle = styled.p`
 `;
 
 const ProviderSelect = styled.select`
-  background: rgba(15, 18, 30, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   color: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(15, 23, 42, 0.15);
   border-radius: 16px;
   padding: 12px 16px;
   font-size: 14px;
@@ -716,11 +698,6 @@ const ProviderSelect = styled.select`
 
   &:disabled {
     opacity: 0.6;
-  }
-
-  @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(20, 30, 60, 0.2);
   }
 `;
 
@@ -746,18 +723,11 @@ const MessageBubble = styled.div`
   background: ${(props) =>
     props.$role === 'user'
       ? 'linear-gradient(135deg, rgba(113, 89, 193, 0.95), rgba(95, 70, 168, 0.9))'
-      : 'rgba(34, 24, 56, 0.6)'};
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+      : 'rgba(255, 255, 255, 0.9)'};
+  color: ${(props) => (props.$role === 'user' ? '#ffffff' : '#111827')};
+  box-shadow: 0 16px 30px rgba(120, 130, 160, 0.18);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(12px);
-
-  @media (prefers-color-scheme: light) {
-    background: ${(props) =>
-      props.$role === 'user'
-        ? 'linear-gradient(135deg, rgba(113, 89, 193, 0.9), rgba(160, 140, 235, 0.9))'
-        : 'rgba(255, 255, 255, 0.7)'};
-    box-shadow: 0 16px 30px rgba(120, 130, 160, 0.18);
-  }
 `;
 
 const MessageMeta = styled.div`
@@ -792,23 +762,18 @@ const MessageActions = styled.div`
 
 const CopyButton = styled.button`
   border: none;
-  background: rgba(20, 18, 36, 0.6);
+  background: rgba(255, 255, 255, 0.95);
   color: inherit;
   border-radius: 12px;
   padding: 6px 10px;
   font-size: 14px;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 12px rgba(120, 130, 160, 0.2);
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-  }
-
-  @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: 0 6px 12px rgba(120, 130, 160, 0.2);
+    box-shadow: 0 8px 16px rgba(120, 130, 160, 0.3);
   }
 `;
 
@@ -876,11 +841,7 @@ const Composer = styled.footer`
   right: 0;
   bottom: 0;
   padding: 20px 24px;
-  background: linear-gradient(180deg, rgba(8, 10, 18, 0) 0%, rgba(8, 6, 16, 0.9) 60%);
-
-  @media (prefers-color-scheme: light) {
-    background: linear-gradient(180deg, rgba(235, 238, 248, 0) 0%, rgba(240, 236, 250, 0.92) 60%);
-  }
+  background: linear-gradient(180deg, rgba(244, 246, 248, 0) 0%, rgba(244, 246, 248, 0.95) 60%);
 `;
 
 const ComposerInner = styled.div`
@@ -889,15 +850,10 @@ const ComposerInner = styled.div`
   gap: 12px;
   padding: 16px;
   border-radius: 24px;
-  background: rgba(34, 24, 56, 0.6);
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 16px 30px rgba(120, 130, 160, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(26px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-
-  @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.7);
-    box-shadow: 0 16px 30px rgba(120, 130, 160, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  }
+  border: 1px solid rgba(15, 23, 42, 0.08);
 `;
 
 const TextInput = styled.textarea`
@@ -930,13 +886,7 @@ const TextInput = styled.textarea`
   }
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.6);
-  }
-
-  @media (prefers-color-scheme: light) {
-    &::placeholder {
-      color: rgba(20, 30, 60, 0.5);
-    }
+    color: rgba(20, 30, 60, 0.5);
   }
 `;
 
@@ -968,16 +918,14 @@ const HistoryPanel = styled.section`
   padding: 16px 20px;
   border-radius: 18px;
   background: rgba(18, 20, 36, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
 
-  @media (prefers-color-scheme: light) {
-    background: rgba(255, 255, 255, 0.85);
-  }
+  background: rgba(255, 255, 255, 0.9);
 `;
 
 const HistoryInfo = styled.div`
@@ -1004,7 +952,7 @@ const HiddenInput = styled.input`
 const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(8, 8, 16, 0.7);
+  background: rgba(17, 24, 39, 0.38);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1016,9 +964,9 @@ const ModalCard = styled.section`
   width: min(720px, 100%);
   padding: 20px 24px;
   border-radius: 20px;
-  background: rgba(16, 20, 34, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 16px 32px rgba(120, 130, 160, 0.24);
   backdrop-filter: blur(18px);
   font-family: 'Poppins', 'SF Pro Text', 'Inter', system-ui, -apple-system, sans-serif;
 `;
