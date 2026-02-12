@@ -1,17 +1,144 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MyGPT</title>
-    <link rel="icon" type="image/png" href="https://github.com/yagasaki7k.png" />
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/png" sizes="512x512" href="https://z-cdn.chatglm.cn/z-ai/static/logo.svg" />
+    <link rel="shortcut icon" href="https://z-cdn.chatglm.cn/z-ai/static/logo.svg" />
+    <link rel="apple-touch-icon" sizes="512x512" href="https://z-cdn.chatglm.cn/z-ai/static/logo.svg" />
+    <meta name="apple-mobile-web-app-title" content="MyGPT - Free AI Chatbot & Agent" />
+    <meta
+      name="description"
+      content="Meet MyGPT, your AI-powered assistant. Build websites, create slides, analyze data, and get instant answers."
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#F4F6F8" />
+    <title>MyGPT - Free AI Chatbot & Agent</title>
+
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
     />
+
+    <script>
+      const initTheme = () => {
+        const metaThemeColorTag = document.querySelector('meta[name="theme-color"]');
+        const prefersTheme = 'light';
+
+        if (!localStorage?.theme) {
+          localStorage.theme = prefersTheme;
+        }
+
+        if (localStorage.theme === 'system') {
+          document.documentElement.classList.add(prefersTheme);
+          metaThemeColorTag.setAttribute('content', prefersTheme === 'light' ? '#F4F6F8' : '#141618');
+        } else if (localStorage.theme === 'light') {
+          document.documentElement.classList.add('light');
+          metaThemeColorTag.setAttribute('content', '#F4F6F8');
+        } else {
+          document.documentElement.classList.add('dark');
+          metaThemeColorTag.setAttribute('content', '#141618');
+        }
+      };
+
+      initTheme();
+    </script>
+
+    <style>
+      html {
+        overflow-y: hidden !important;
+      }
+
+      #splash-screen {
+        background: #f4f6f8;
+      }
+
+      html.dark #splash-screen {
+        background: #141618;
+      }
+
+      #progress-background,
+      #progress-bar {
+        display: none;
+      }
+
+      @keyframes pulse {
+        50% {
+          opacity: 0.65;
+        }
+      }
+
+      .animate-pulse-fast {
+        animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+    </style>
   </head>
+
   <body>
     <div id="root"></div>
+
+    <div
+      id="splash-screen"
+      style="
+        position: fixed;
+        z-index: 100;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #f4f6f8;
+      "
+    >
+      <img
+        id="logo"
+        style="
+          position: absolute;
+          width: auto;
+          height: 5rem;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        "
+        src="https://z-cdn.chatglm.cn/z-ai/static/logo.svg"
+        class="animate-pulse-fast"
+      />
+
+      <div
+        style="
+          position: absolute;
+          top: 33%;
+          left: 50%;
+          width: 24rem;
+          transform: translateX(-50%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        "
+      >
+        <div style="position: relative; width: 24rem; margin-top: 0.5rem">
+          <div
+            id="progress-background"
+            style="
+              position: absolute;
+              width: 100%;
+              height: 0.75rem;
+              border-radius: 9999px;
+              background-color: #f4f6f8;
+            "
+          ></div>
+          <div
+            id="progress-bar"
+            style="
+              position: absolute;
+              width: 0%;
+              height: 0.75rem;
+              border-radius: 9999px;
+              background-color: #fff;
+            "
+          ></div>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
