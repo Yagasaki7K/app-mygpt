@@ -15,8 +15,8 @@
         "dotenv": "^17.4.2",
         "elysia": "^1.4.29",
         "lucide-react": "^0.563.0",
-        "react": "^19.2.7",
-        "react-dom": "^19.2.7",
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8",
         "styled-components": "^6.4.4"
     },
     "devDependencies": {
